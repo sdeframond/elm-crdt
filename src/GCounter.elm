@@ -1,4 +1,4 @@
-module GCounter exposing (GCounter, increment, merge, value, zero)
+module GCounter exposing (GCounter, increment, merge, toDict, value, zero)
 
 import Dict exposing (Dict)
 
@@ -40,3 +40,8 @@ merge (GCounter da) (GCounter db) =
 value : GCounter -> Int
 value (GCounter d) =
     Dict.foldl (\_ v sum -> sum + v) 0 d
+
+
+toDict : GCounter -> Dict ReplicaId Int
+toDict (GCounter d) =
+    d

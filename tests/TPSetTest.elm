@@ -16,12 +16,12 @@ applyOps : List ( Operation, String ) -> TPSet.TPSet String
 applyOps ops =
     let
         apply ( op, arg ) set =
-            case ( op, arg ) of
-                ( Insert, v ) ->
-                    TPSet.insert v set
+            case op of
+                Insert ->
+                    TPSet.insert arg set
 
-                ( Remove, v ) ->
-                    TPSet.remove v set
+                Remove ->
+                    TPSet.remove arg set
     in
     List.foldl apply TPSet.init ops
 

@@ -8,7 +8,6 @@ module TPSet exposing
     )
 
 import GSet exposing (GSet)
-import Set exposing (Set)
 
 
 type TPSet comparable
