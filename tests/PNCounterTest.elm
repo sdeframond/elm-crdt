@@ -1,6 +1,6 @@
 module PNCounterTest exposing (..)
 
-import CrdtHelper exposing (itIsACrdt)
+import CrdtHelper exposing (isASimpleCrdt)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, tuple)
 import PNCounter
@@ -56,7 +56,7 @@ pNCounterFuzzer =
 suite : Test
 suite =
     describe "PNCounter"
-        [ itIsACrdt { fuzzer = pNCounterFuzzer, merge = PNCounter.merge }
+        [ isASimpleCrdt { fuzzer = pNCounterFuzzer, merge = PNCounter.merge }
         , fuzz operationsFuzzer "it counts alright" <|
             \ops ->
                 let

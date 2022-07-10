@@ -1,9 +1,9 @@
-module AWORSetTest exposing (..)
+module AWORSetTest exposing (suite)
 
 import AWORSet
-import CrdtHelper exposing (itIsACrdt)
+import CrdtHelper exposing (isASimpleCrdt)
 import Expect
-import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple, tuple3)
+import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple3)
 import Test exposing (..)
 
 
@@ -53,7 +53,7 @@ fuzzer =
 suite : Test
 suite =
     describe "AWORSet"
-        [ itIsACrdt { fuzzer = fuzzer, merge = AWORSet.merge }
+        [ isASimpleCrdt { fuzzer = fuzzer, merge = AWORSet.merge }
         , testMergeConflict
         , testInsertAndRemove
         ]
@@ -61,10 +61,8 @@ suite =
 
 testMergeConflict : Test
 testMergeConflict =
-    fuzz (tuple3 ( replica, replica, fuzzer ))
-        "Add wins over a concurrent remove"
-    <|
-        \( ridA, ridB, set ) ->
+    fuzz3 replica replica fuzzer "Add wins over a concurrent remove" <|
+        \ridA ridB set ->
             AWORSet.merge
                 (AWORSet.remove ridA "" set)
                 (AWORSet.remove ridB "" set |> AWORSet.insert "B" "")
@@ -81,15 +79,15 @@ testInsertAndRemove =
                     |> AWORSet.insert "A" "foo"
                     |> AWORSet.member "foo"
                     |> Expect.true "Expect `foo` to be in the set"
-        , fuzz (tuple ( replica, fuzzer )) ".insert is idempotent" <|
-            \( rid, set ) ->
+        , fuzz2 replica fuzzer ".insert is idempotent" <|
+            \rid set ->
                 let
                     a =
                         AWORSet.insert rid "" set
                 in
                 Expect.equal a (AWORSet.insert rid "" a)
-        , fuzz (tuple ( replica, fuzzer )) ".remove is idempotent" <|
-            \( rid, set ) ->
+        , fuzz2 replica fuzzer ".remove is idempotent" <|
+            \rid set ->
                 let
                     a =
                         AWORSet.remove rid "" set

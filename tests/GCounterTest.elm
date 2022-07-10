@@ -1,6 +1,6 @@
-module GCounterTest exposing (..)
+module GCounterTest exposing (gCounterFuzzer, suite)
 
-import CrdtHelper exposing (itIsACrdt)
+import CrdtHelper exposing (isASimpleCrdt)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf)
 import GCounter
@@ -35,7 +35,7 @@ gCounterFuzzer =
 suite : Test
 suite =
     describe "GCounter"
-        [ itIsACrdt { fuzzer = gCounterFuzzer, merge = GCounter.merge }
+        [ isASimpleCrdt { fuzzer = gCounterFuzzer, merge = GCounter.merge }
         , fuzz operationsFuzzer "it gives the correct value" <|
             \l ->
                 fromList l GCounter.zero

@@ -1,6 +1,6 @@
 module TPSetTest exposing (..)
 
-import CrdtHelper exposing (itIsACrdt)
+import CrdtHelper exposing (isASimpleCrdt)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple)
 import TPSet
@@ -46,7 +46,7 @@ tPSetFuzzer =
 suite : Test
 suite =
     describe "TPSet"
-        [ itIsACrdt { fuzzer = tPSetFuzzer, merge = TPSet.merge }
+        [ isASimpleCrdt { fuzzer = tPSetFuzzer, merge = TPSet.merge }
         , test "inserted items are in the set" <|
             \_ ->
                 TPSet.init

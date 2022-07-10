@@ -1,6 +1,6 @@
 module GSetTest exposing (..)
 
-import CrdtHelper exposing (itIsACrdt)
+import CrdtHelper exposing (isASimpleCrdt)
 import Expect
 import Fuzz exposing (Fuzzer, list, string)
 import GSet
@@ -22,7 +22,7 @@ gSetFuzzer =
 suite : Test
 suite =
     describe "GSet"
-        [ itIsACrdt { fuzzer = gSetFuzzer, merge = GSet.merge }
+        [ isASimpleCrdt { fuzzer = gSetFuzzer, merge = GSet.merge }
         , fuzz (list string) "it keeps the inserted items" <|
             \l -> fromList l |> GSet.toSet |> Expect.equal (Set.fromList l)
         ]
