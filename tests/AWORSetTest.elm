@@ -1,7 +1,7 @@
 module AWORSetTest exposing (suite)
 
 import AWORSet
-import CrdtHelper exposing (isASimpleCrdt)
+import CrdtHelper exposing (itIsACrdt)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple3)
 import Test exposing (..)
@@ -26,34 +26,37 @@ applyOps ops =
     List.foldl apply AWORSet.init ops
 
 
-replica : Fuzzer String
-replica =
-    [ "A", "B", "C", "D" ]
-        |> List.map constant
-        |> oneOf
+replica : List String -> Fuzzer String
+replica rids =
+    List.map constant rids |> oneOf
 
 
-operationsFuzzer : Fuzzer (List ( String, Operation, String ))
-operationsFuzzer =
+operationsFuzzer : List String -> Fuzzer (List ( String, Operation, String ))
+operationsFuzzer rids =
     let
         operation =
             [ Insert, Remove ]
                 |> List.map constant
                 |> oneOf
     in
-    tuple3 ( replica, operation, string )
+    tuple3 ( replica rids, operation, string )
         |> list
 
 
-fuzzer : Fuzzer (AWORSet.AWORSet String)
-fuzzer =
-    Fuzz.map applyOps operationsFuzzer
+fuzzer : List String -> Fuzzer (AWORSet.AWORSet String)
+fuzzer rids =
+    Fuzz.map applyOps (operationsFuzzer rids)
 
 
 suite : Test
 suite =
     describe "AWORSet"
-        [ isASimpleCrdt { fuzzer = fuzzer, merge = AWORSet.merge }
+        [ itIsACrdt
+            { fuzzerA = fuzzer [ "A" ]
+            , fuzzerB = fuzzer [ "B" ]
+            , fuzzerC = fuzzer [ "C" ]
+            , merge = AWORSet.merge
+            }
         , testMergeConflict
         , testInsertAndRemove
         ]
@@ -61,11 +64,11 @@ suite =
 
 testMergeConflict : Test
 testMergeConflict =
-    fuzz3 replica replica fuzzer "Add wins over a concurrent remove" <|
-        \ridA ridB set ->
+    fuzz (fuzzer [ "A", "B" ]) "Add wins over a concurrent remove" <|
+        \set ->
             AWORSet.merge
-                (AWORSet.remove ridA "" set)
-                (AWORSet.remove ridB "" set |> AWORSet.insert "B" "")
+                (AWORSet.remove "A" "" set)
+                (AWORSet.remove "B" "" set |> AWORSet.insert "B" "")
                 |> AWORSet.member ""
                 |> Expect.true "Expect the empty string to be in the set"
 
@@ -79,20 +82,20 @@ testInsertAndRemove =
                     |> AWORSet.insert "A" "foo"
                     |> AWORSet.member "foo"
                     |> Expect.true "Expect `foo` to be in the set"
-        , fuzz2 replica fuzzer ".insert is idempotent" <|
-            \rid set ->
+        , fuzz (fuzzer [ "A", "B" ]) ".insert is idempotent" <|
+            \set ->
                 let
                     a =
-                        AWORSet.insert rid "" set
+                        AWORSet.insert "A" "" set
                 in
-                Expect.equal a (AWORSet.insert rid "" a)
-        , fuzz2 replica fuzzer ".remove is idempotent" <|
-            \rid set ->
+                Expect.equal a (AWORSet.insert "A" "" a)
+        , fuzz (fuzzer [ "A", "B" ]) ".remove is idempotent" <|
+            \set ->
                 let
                     a =
-                        AWORSet.remove rid "" set
+                        AWORSet.remove "A" "" set
                 in
-                Expect.equal a (AWORSet.remove rid "" a)
+                Expect.equal a (AWORSet.remove "A" "" a)
         , test ".remove removes an item from the set" <|
             \_ ->
                 AWORSet.init

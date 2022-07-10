@@ -3,7 +3,7 @@ module AWORMapTest exposing (suite)
 import AWORMap
 import CrdtHelper exposing (itIsACrdt)
 import Expect
-import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple)
+import Fuzz exposing (Fuzzer, constant, list, oneOf, string)
 import GCounter
 import GCounterTest exposing (gCounterFuzzer)
 import Test exposing (..)
@@ -60,10 +60,11 @@ suite =
             , fuzzerC = fuzzer [ "C" ]
             , merge = AWORMap.merge GCounter.merge
             }
-        , fuzz (tuple ( fuzzer [ "A", "B" ], gCounterFuzzer ))
+        , fuzz2 (fuzzer [ "A", "B" ])
+            gCounterFuzzer
             "Add wins over a concurrent remove"
           <|
-            \( map, value ) ->
+            \map value ->
                 AWORMap.merge GCounter.merge
                     (AWORMap.remove "A" "" map)
                     (AWORMap.remove "B" "" map |> AWORMap.insert "B" "" value)
