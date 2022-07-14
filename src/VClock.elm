@@ -2,6 +2,7 @@ module VClock exposing
     ( Order(..)
     , VClock
     , compare
+    , delta
     , increment
     , merge
     , zero
@@ -77,3 +78,8 @@ compare (VClock a_) (VClock b_) =
 merge : VClock -> VClock -> VClock
 merge (VClock a) (VClock b) =
     VClock (GCounter.merge a b)
+
+
+delta : VClock -> VClock -> VClock
+delta (VClock a) (VClock b) =
+    VClock (GCounter.delta a b)

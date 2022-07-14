@@ -3,7 +3,7 @@ module GCounterTest exposing (gCounterFuzzer, suite)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf)
 import GCounter
-import Helpers exposing (isAnAnonymousCrdt)
+import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable)
 import Test exposing (..)
 
 
@@ -35,7 +35,8 @@ gCounterFuzzer =
 suite : Test
 suite =
     describe "GCounter"
-        [ isAnAnonymousCrdt { fuzzer = gCounterFuzzer, merge = GCounter.merge }
+        [ itIsAnAnonymousCrdt { fuzzer = gCounterFuzzer, merge = GCounter.merge }
+        , itIsAnonymouslyDiffable { init = GCounter.zero, merge = GCounter.merge, fuzzer = gCounterFuzzer, delta = GCounter.delta }
         , fuzz operationsFuzzer "it gives the correct value" <|
             \l ->
                 fromList l GCounter.zero

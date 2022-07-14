@@ -1,4 +1,4 @@
-module AWORSet exposing (AWORSet, init, insert, member, merge, remove)
+module AWORSet exposing (AWORSet, delta, init, insert, member, merge, remove)
 
 import AWORMap
 
@@ -34,3 +34,8 @@ merge (AWORSet a) (AWORSet b) =
 member : comparable -> AWORSet comparable -> Bool
 member v (AWORSet m) =
     AWORMap.member v m
+
+
+delta : AWORSet comparable -> AWORSet comparable -> AWORSet comparable
+delta (AWORSet a) (AWORSet b) =
+    AWORSet (AWORMap.delta (\_ _ -> ()) a b)

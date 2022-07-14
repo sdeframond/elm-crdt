@@ -1,6 +1,7 @@
 module PNCounter exposing
     ( PNCounter
     , decrement
+    , delta
     , increment
     , init
     , merge
@@ -47,3 +48,8 @@ merge (PNCounter incsA decsA) (PNCounter incsB decsB) =
     PNCounter
         (GCounter.merge incsA incsB)
         (GCounter.merge decsA decsB)
+
+
+delta : PNCounter -> PNCounter -> PNCounter
+delta (PNCounter incsA decsA) (PNCounter incsB decsB) =
+    PNCounter (GCounter.delta incsA incsB) (GCounter.delta decsA decsB)

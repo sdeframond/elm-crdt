@@ -2,7 +2,7 @@ module TPSetTest exposing (..)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple)
-import Helpers exposing (isAnAnonymousCrdt)
+import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable)
 import TPSet
 import Test exposing (..)
 
@@ -46,7 +46,8 @@ tPSetFuzzer =
 suite : Test
 suite =
     describe "TPSet"
-        [ isAnAnonymousCrdt { fuzzer = tPSetFuzzer, merge = TPSet.merge }
+        [ itIsAnAnonymousCrdt { fuzzer = tPSetFuzzer, merge = TPSet.merge }
+        , itIsAnonymouslyDiffable { init = TPSet.init, fuzzer = tPSetFuzzer, merge = TPSet.merge, delta = TPSet.delta }
         , test "inserted items are in the set" <|
             \_ ->
                 TPSet.init

@@ -1,5 +1,6 @@
 module AWORMap exposing
     ( AWORMap
+    , delta
     , get
     , init
     , insert
@@ -103,6 +104,41 @@ merge mergeValues (AWORMap da) (AWORMap db) =
     in
     Dict.merge Dict.insert mergeBoth Dict.insert da db Dict.empty
         |> AWORMap
+
+
+delta : (v -> v -> v) -> AWORMap comparable v -> AWORMap comparable v -> AWORMap comparable v
+delta deltaValues (AWORMap da) (AWORMap db) =
+    let
+        skip _ _ =
+            identity
+
+        statusDelta stA stB =
+            case ( stA, stB ) of
+                ( Added a, Added b ) ->
+                    Added (deltaValues a b)
+
+                ( Added a, Removed ) ->
+                    Added a
+
+                ( Removed, _ ) ->
+                    -- We don't care about b
+                    Removed
+
+        insertDelta k ( vclA, stA ) ( vclB, stB ) d =
+            case VClock.compare vclA vclB of
+                VClock.EQ ->
+                    d
+
+                VClock.CC ->
+                    Dict.insert k ( VClock.delta vclA vclB, statusDelta stA stB ) d
+
+                VClock.GT ->
+                    Dict.insert k ( VClock.delta vclA vclB, statusDelta stA stB ) d
+
+                VClock.LT ->
+                    d
+    in
+    AWORMap <| Dict.merge Dict.insert insertDelta skip da db Dict.empty
 
 
 member : comparable -> AWORMap comparable v -> Bool

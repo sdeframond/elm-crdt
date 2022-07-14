@@ -1,12 +1,12 @@
-module Helpers exposing (isAnAnonymousCrdt, itIsACrdt)
+module Helpers exposing (itIsACrdt, itIsAnAnonymousCrdt, itIsAnonymouslyDiffable, itIsDiffable)
 
 import Expect
 import Fuzz exposing (Fuzzer)
 import Test exposing (..)
 
 
-isAnAnonymousCrdt : { fuzzer : Fuzzer a, merge : a -> a -> a } -> Test
-isAnAnonymousCrdt { fuzzer, merge } =
+itIsAnAnonymousCrdt : { fuzzer : Fuzzer a, merge : a -> a -> a } -> Test
+itIsAnAnonymousCrdt { fuzzer, merge } =
     itIsACrdt
         { fuzzerA = fuzzer
         , fuzzerB = fuzzer
@@ -26,4 +26,24 @@ itIsACrdt { fuzzerA, fuzzerB, fuzzerC, merge } =
             \a b c ->
                 merge a (merge b c)
                     |> Expect.equal (merge a b |> merge c)
+        ]
+
+
+itIsAnonymouslyDiffable : { init : a, fuzzer : Fuzz.Fuzzer a, delta : a -> a -> a, merge : a -> a -> a } -> Test
+itIsAnonymouslyDiffable { init, fuzzer, delta, merge } =
+    itIsDiffable { init = init, fuzzerA = fuzzer, fuzzerB = fuzzer, delta = delta, merge = merge }
+
+
+itIsDiffable : { init : a, delta : a -> a -> a, merge : a -> a -> a, fuzzerA : Fuzz.Fuzzer a, fuzzerB : Fuzz.Fuzzer a } -> Test
+itIsDiffable { init, fuzzerA, fuzzerB, delta, merge } =
+    describe "it is diffable"
+        [ fuzz2 fuzzerA fuzzerB "a + d(b, a) == a + b" <|
+            \a b ->
+                Expect.equal (merge a (delta b a)) (merge a b)
+        , fuzz fuzzerA "d(a, init) == a" <|
+            \a ->
+                Expect.equal (delta a init) a
+        , fuzz2 fuzzerA fuzzerB "d(a, a + b) == init" <|
+            \a b ->
+                Expect.equal (delta a (merge a b)) init
         ]

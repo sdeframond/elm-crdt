@@ -1,4 +1,4 @@
-module GCounter exposing (GCounter, increment, merge, toDict, value, zero)
+module GCounter exposing (GCounter, delta, increment, merge, toDict, value, zero)
 
 import Dict exposing (Dict)
 
@@ -45,3 +45,19 @@ value (GCounter d) =
 toDict : GCounter -> Dict ReplicaId Int
 toDict (GCounter d) =
     d
+
+
+delta : GCounter -> GCounter -> GCounter
+delta (GCounter da) (GCounter db) =
+    let
+        skip _ _ =
+            identity
+
+        insertIfGreater k a b d =
+            if a > b then
+                Dict.insert k a d
+
+            else
+                d
+    in
+    GCounter (Dict.merge Dict.insert insertIfGreater skip da db Dict.empty)

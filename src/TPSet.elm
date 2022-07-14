@@ -1,5 +1,6 @@
 module TPSet exposing
     ( TPSet
+    , delta
     , init
     , insert
     , member
@@ -41,3 +42,8 @@ merge (TPSet addedA deletedA) (TPSet addedB deletedB) =
 member : comparable -> TPSet comparable -> Bool
 member v (TPSet added deleted) =
     not (GSet.member v deleted) && GSet.member v added
+
+
+delta : TPSet comparable -> TPSet comparable -> TPSet comparable
+delta (TPSet addedA deletedA) (TPSet addedB deletedB) =
+    TPSet (GSet.delta addedA addedB) (GSet.delta deletedA deletedB)

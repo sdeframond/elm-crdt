@@ -5,7 +5,7 @@ import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string)
 import GCounter
 import GCounterTest exposing (gCounterFuzzer)
-import Helpers exposing (itIsACrdt)
+import Helpers exposing (itIsACrdt, itIsDiffable)
 import Test exposing (..)
 
 
@@ -59,6 +59,13 @@ suite =
             , fuzzerB = fuzzer [ "B" ]
             , fuzzerC = fuzzer [ "C" ]
             , merge = AWORMap.merge GCounter.merge
+            }
+        , itIsDiffable
+            { init = AWORMap.init
+            , merge = AWORMap.merge GCounter.merge
+            , delta = AWORMap.delta GCounter.delta
+            , fuzzerA = fuzzer [ "A" ]
+            , fuzzerB = fuzzer [ "B", "C" ]
             }
         , fuzz2 (fuzzer [ "A", "B" ])
             gCounterFuzzer

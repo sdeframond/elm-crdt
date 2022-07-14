@@ -2,7 +2,7 @@ module PNCounterTest exposing (..)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, tuple)
-import Helpers exposing (isAnAnonymousCrdt)
+import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable)
 import PNCounter
 import Test exposing (..)
 
@@ -56,7 +56,8 @@ pNCounterFuzzer =
 suite : Test
 suite =
     describe "PNCounter"
-        [ isAnAnonymousCrdt { fuzzer = pNCounterFuzzer, merge = PNCounter.merge }
+        [ itIsAnAnonymousCrdt { fuzzer = pNCounterFuzzer, merge = PNCounter.merge }
+        , itIsAnonymouslyDiffable { init = PNCounter.init, merge = PNCounter.merge, delta = PNCounter.delta, fuzzer = pNCounterFuzzer }
         , fuzz operationsFuzzer "it counts alright" <|
             \ops ->
                 let

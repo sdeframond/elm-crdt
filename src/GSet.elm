@@ -1,4 +1,4 @@
-module GSet exposing (GSet, empty, insert, member, merge, toSet)
+module GSet exposing (GSet, delta, empty, insert, member, merge, toSet)
 
 import Set
 
@@ -30,3 +30,8 @@ toSet (GSet set) =
 member : comparable -> GSet comparable -> Bool
 member v (GSet set) =
     Set.member v set
+
+
+delta : GSet comparable -> GSet comparable -> GSet comparable
+delta (GSet a) (GSet b) =
+    Set.diff a b |> GSet

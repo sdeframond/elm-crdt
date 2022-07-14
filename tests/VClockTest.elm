@@ -2,7 +2,7 @@ module VClockTest exposing (suite)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf)
-import Helpers exposing (isAnAnonymousCrdt)
+import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable)
 import Test exposing (..)
 import VClock
 
@@ -35,7 +35,8 @@ fuzzer =
 suite : Test
 suite =
     describe "VTime"
-        [ isAnAnonymousCrdt { fuzzer = fuzzer, merge = VClock.merge }
+        [ itIsAnAnonymousCrdt { fuzzer = fuzzer, merge = VClock.merge }
+        , itIsAnonymouslyDiffable { init = VClock.zero, merge = VClock.merge, delta = VClock.delta, fuzzer = fuzzer }
         , testCompare
         ]
 

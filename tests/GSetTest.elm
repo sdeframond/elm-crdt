@@ -3,7 +3,7 @@ module GSetTest exposing (..)
 import Expect
 import Fuzz exposing (Fuzzer, list, string)
 import GSet
-import Helpers exposing (isAnAnonymousCrdt)
+import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable)
 import Set
 import Test exposing (..)
 
@@ -22,7 +22,8 @@ gSetFuzzer =
 suite : Test
 suite =
     describe "GSet"
-        [ isAnAnonymousCrdt { fuzzer = gSetFuzzer, merge = GSet.merge }
+        [ itIsAnAnonymousCrdt { fuzzer = gSetFuzzer, merge = GSet.merge }
+        , itIsAnonymouslyDiffable { init = GSet.empty, fuzzer = gSetFuzzer, delta = GSet.delta, merge = GSet.merge }
         , fuzz (list string) "it keeps the inserted items" <|
             \l -> fromList l |> GSet.toSet |> Expect.equal (Set.fromList l)
         ]
