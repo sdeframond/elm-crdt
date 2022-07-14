@@ -1,12 +1,12 @@
-module CrdtHelper exposing (isASimpleCrdt, itIsACrdt)
+module Helpers exposing (isAnAnonymousCrdt, itIsACrdt)
 
 import Expect
-import Fuzz exposing (Fuzzer, tuple, tuple3)
+import Fuzz exposing (Fuzzer)
 import Test exposing (..)
 
 
-isASimpleCrdt : { fuzzer : Fuzzer a, merge : a -> a -> a } -> Test
-isASimpleCrdt { fuzzer, merge } =
+isAnAnonymousCrdt : { fuzzer : Fuzzer a, merge : a -> a -> a } -> Test
+isAnAnonymousCrdt { fuzzer, merge } =
     itIsACrdt
         { fuzzerA = fuzzer
         , fuzzerB = fuzzer

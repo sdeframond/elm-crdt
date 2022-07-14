@@ -1,11 +1,11 @@
 module AWORMapTest exposing (suite)
 
 import AWORMap
-import CrdtHelper exposing (itIsACrdt)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string)
 import GCounter
 import GCounterTest exposing (gCounterFuzzer)
+import Helpers exposing (itIsACrdt)
 import Test exposing (..)
 
 

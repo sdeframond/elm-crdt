@@ -1,8 +1,8 @@
 module VClockTest exposing (suite)
 
-import CrdtHelper exposing (isASimpleCrdt)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf)
+import Helpers exposing (isAnAnonymousCrdt)
 import Test exposing (..)
 import VClock
 
@@ -35,7 +35,7 @@ fuzzer =
 suite : Test
 suite =
     describe "VTime"
-        [ isASimpleCrdt { fuzzer = fuzzer, merge = VClock.merge }
+        [ isAnAnonymousCrdt { fuzzer = fuzzer, merge = VClock.merge }
         , testCompare
         ]
 

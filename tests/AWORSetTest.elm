@@ -1,9 +1,9 @@
 module AWORSetTest exposing (suite)
 
 import AWORSet
-import CrdtHelper exposing (itIsACrdt)
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple3)
+import Helpers exposing (itIsACrdt)
 import Test exposing (..)
 
 
