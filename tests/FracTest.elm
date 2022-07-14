@@ -15,7 +15,10 @@ fuzzer =
 
 suite : Test
 suite =
-    fuzzWith { runs = 2 } (tuple ( fuzzer, fuzzer )) "Frac.between return a value between its arguments" <|
+    fuzzWith { runs = 2 }
+        (tuple ( fuzzer, fuzzer ))
+        "Frac.between returns a value that is between its arguments"
+    <|
         \( a, b ) ->
             let
                 expectations =

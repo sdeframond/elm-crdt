@@ -39,7 +39,7 @@ insert : ReplicaId -> comparable -> v -> AWORMap comparable v -> AWORMap compara
 insert rid k v (AWORMap d) =
     case Dict.get k d of
         Nothing ->
-            AWORMap (Dict.insert k ( VClock.increment rid VClock.zero, Added v ) d)
+            AWORMap (Dict.insert k ( VClock.increment rid VClock.init, Added v ) d)
 
         Just ( vcl, Added current ) ->
             if v == current then
@@ -83,21 +83,7 @@ merge mergeValues (AWORMap da) (AWORMap db) =
                     Removed
 
         mergeDots ( vclA, stA ) ( vclB, stB ) =
-            case VClock.compare vclA vclB of
-                VClock.EQ ->
-                    -- Both values should be equal, excepted when concurrent
-                    -- operations were applied with the same replica id, which
-                    -- is not a supported case anyway.
-                    ( vclA, stA )
-
-                VClock.CC ->
-                    ( VClock.merge vclA vclB, mergeStatus stA stB )
-
-                VClock.GT ->
-                    ( vclA, stA )
-
-                VClock.LT ->
-                    ( vclB, stB )
+            ( VClock.merge vclA vclB, mergeStatus stA stB )
 
         mergeBoth k a b d =
             Dict.insert k (mergeDots a b) d
@@ -125,18 +111,15 @@ delta deltaValues (AWORMap da) (AWORMap db) =
                     Removed
 
         insertDelta k ( vclA, stA ) ( vclB, stB ) d =
-            case VClock.compare vclA vclB of
-                VClock.EQ ->
-                    d
+            let
+                clockDelta =
+                    VClock.delta vclA vclB
+            in
+            if clockDelta == VClock.init then
+                d
 
-                VClock.CC ->
-                    Dict.insert k ( VClock.delta vclA vclB, statusDelta stA stB ) d
-
-                VClock.GT ->
-                    Dict.insert k ( VClock.delta vclA vclB, statusDelta stA stB ) d
-
-                VClock.LT ->
-                    d
+            else
+                Dict.insert k ( clockDelta, statusDelta stA stB ) d
     in
     AWORMap <| Dict.merge Dict.insert insertDelta skip da db Dict.empty
 

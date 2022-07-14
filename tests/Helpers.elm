@@ -1,4 +1,9 @@
-module Helpers exposing (itIsACrdt, itIsAnAnonymousCrdt, itIsAnonymouslyDiffable, itIsDiffable)
+module Helpers exposing
+    ( itIsACrdt
+    , itIsAnAnonymousCrdt
+    , itIsAnonymouslyDiffable
+    , itIsDiffable
+    )
 
 import Expect
 import Fuzz exposing (Fuzzer)
@@ -15,7 +20,13 @@ itIsAnAnonymousCrdt { fuzzer, merge } =
         }
 
 
-itIsACrdt : { fuzzerA : Fuzzer a, fuzzerB : Fuzzer a, fuzzerC : Fuzzer a, merge : a -> a -> a } -> Test
+itIsACrdt :
+    { fuzzerA : Fuzzer a
+    , fuzzerB : Fuzzer a
+    , fuzzerC : Fuzzer a
+    , merge : a -> a -> a
+    }
+    -> Test
 itIsACrdt { fuzzerA, fuzzerB, fuzzerC, merge } =
     describe "it is a CRDT"
         [ fuzz fuzzerA "it is idempotent" <|
@@ -29,12 +40,31 @@ itIsACrdt { fuzzerA, fuzzerB, fuzzerC, merge } =
         ]
 
 
-itIsAnonymouslyDiffable : { init : a, fuzzer : Fuzz.Fuzzer a, delta : a -> a -> a, merge : a -> a -> a } -> Test
+itIsAnonymouslyDiffable :
+    { init : a
+    , fuzzer : Fuzz.Fuzzer a
+    , delta : a -> a -> a
+    , merge : a -> a -> a
+    }
+    -> Test
 itIsAnonymouslyDiffable { init, fuzzer, delta, merge } =
-    itIsDiffable { init = init, fuzzerA = fuzzer, fuzzerB = fuzzer, delta = delta, merge = merge }
+    itIsDiffable
+        { init = init
+        , fuzzerA = fuzzer
+        , fuzzerB = fuzzer
+        , delta = delta
+        , merge = merge
+        }
 
 
-itIsDiffable : { init : a, delta : a -> a -> a, merge : a -> a -> a, fuzzerA : Fuzz.Fuzzer a, fuzzerB : Fuzz.Fuzzer a } -> Test
+itIsDiffable :
+    { init : a
+    , delta : a -> a -> a
+    , merge : a -> a -> a
+    , fuzzerA : Fuzz.Fuzzer a
+    , fuzzerB : Fuzz.Fuzzer a
+    }
+    -> Test
 itIsDiffable { init, fuzzerA, fuzzerB, delta, merge } =
     describe "it is diffable"
         [ fuzz2 fuzzerA fuzzerB "a + d(b, a) == a + b" <|

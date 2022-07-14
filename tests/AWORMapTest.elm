@@ -4,7 +4,7 @@ import AWORMap
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string)
 import GCounter
-import GCounterTest exposing (gCounterFuzzer)
+import GCounterTest
 import Helpers exposing (itIsACrdt, itIsDiffable)
 import Test exposing (..)
 
@@ -38,7 +38,7 @@ operationsFuzzer : List String -> Fuzzer (List Operation)
 operationsFuzzer rids =
     let
         operation =
-            [ Fuzz.map3 Insert (replica rids) string gCounterFuzzer
+            [ Fuzz.map3 Insert (replica rids) string GCounterTest.fuzzer
             , Fuzz.map2 Remove (replica rids) string
             ]
                 |> oneOf
@@ -68,7 +68,7 @@ suite =
             , fuzzerB = fuzzer [ "B", "C" ]
             }
         , fuzz2 (fuzzer [ "A", "B" ])
-            gCounterFuzzer
+            GCounterTest.fuzzer
             "Add wins over a concurrent remove"
           <|
             \map value ->
@@ -83,7 +83,7 @@ suite =
                     |> AWORMap.insert "A" "foo" "bar"
                     |> AWORMap.get "foo"
                     |> Expect.equal (Just "bar")
-        , fuzz2 (fuzzer [ "A", "B" ]) gCounterFuzzer ".insert is idempotent" <|
+        , fuzz2 (fuzzer [ "A", "B" ]) GCounterTest.fuzzer ".insert is idempotent" <|
             \map value ->
                 let
                     a =
@@ -119,19 +119,19 @@ suite =
             \_ ->
                 let
                     map =
-                        AWORMap.init |> AWORMap.insert "A" "foo" GCounter.zero
+                        AWORMap.init |> AWORMap.insert "A" "foo" GCounter.init
 
                     a =
-                        AWORMap.insert "A" "foo" (GCounter.zero |> GCounter.increment "A") map
+                        AWORMap.insert "A" "foo" (GCounter.init |> GCounter.increment "A") map
 
                     b =
-                        AWORMap.insert "B" "foo" (GCounter.zero |> GCounter.increment "B") map
+                        AWORMap.insert "B" "foo" (GCounter.init |> GCounter.increment "B") map
 
                     merged =
                         AWORMap.merge GCounter.merge a b
 
                     expectedValue =
-                        GCounter.zero
+                        GCounter.init
                             |> GCounter.increment "B"
                             |> GCounter.increment "A"
                 in

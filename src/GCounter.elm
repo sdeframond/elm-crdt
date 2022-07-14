@@ -1,4 +1,4 @@
-module GCounter exposing (GCounter, delta, increment, merge, toDict, value, zero)
+module GCounter exposing (GCounter, delta, increment, init, merge, toDict, value)
 
 import Dict exposing (Dict)
 
@@ -11,8 +11,8 @@ type GCounter
     = GCounter (Dict ReplicaId Int)
 
 
-zero : GCounter
-zero =
+init : GCounter
+init =
     GCounter Dict.empty
 
 

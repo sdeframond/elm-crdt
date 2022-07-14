@@ -29,14 +29,19 @@ operationsFuzzer =
 
 fuzzer : Fuzzer VClock.VClock
 fuzzer =
-    Fuzz.map (\rids -> fromList rids VClock.zero) operationsFuzzer
+    Fuzz.map (\rids -> fromList rids VClock.init) operationsFuzzer
 
 
 suite : Test
 suite =
     describe "VTime"
         [ itIsAnAnonymousCrdt { fuzzer = fuzzer, merge = VClock.merge }
-        , itIsAnonymouslyDiffable { init = VClock.zero, merge = VClock.merge, delta = VClock.delta, fuzzer = fuzzer }
+        , itIsAnonymouslyDiffable
+            { init = VClock.init
+            , merge = VClock.merge
+            , delta = VClock.delta
+            , fuzzer = fuzzer
+            }
         , testCompare
         ]
 

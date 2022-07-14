@@ -21,7 +21,7 @@ type PNCounter
 
 init : PNCounter
 init =
-    PNCounter GCounter.zero GCounter.zero
+    PNCounter GCounter.init GCounter.init
 
 
 value : PNCounter -> Int

@@ -1,4 +1,4 @@
-module GCounterTest exposing (gCounterFuzzer, suite)
+module GCounterTest exposing (fuzzer, suite)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf)
@@ -27,19 +27,24 @@ operationsFuzzer =
     list (replicas |> List.map constant |> oneOf)
 
 
-gCounterFuzzer : Fuzzer GCounter.GCounter
-gCounterFuzzer =
-    Fuzz.map (\rids -> fromList rids GCounter.zero) operationsFuzzer
+fuzzer : Fuzzer GCounter.GCounter
+fuzzer =
+    Fuzz.map (\rids -> fromList rids GCounter.init) operationsFuzzer
 
 
 suite : Test
 suite =
     describe "GCounter"
-        [ itIsAnAnonymousCrdt { fuzzer = gCounterFuzzer, merge = GCounter.merge }
-        , itIsAnonymouslyDiffable { init = GCounter.zero, merge = GCounter.merge, fuzzer = gCounterFuzzer, delta = GCounter.delta }
+        [ itIsAnAnonymousCrdt { fuzzer = fuzzer, merge = GCounter.merge }
+        , itIsAnonymouslyDiffable
+            { init = GCounter.init
+            , merge = GCounter.merge
+            , fuzzer = fuzzer
+            , delta = GCounter.delta
+            }
         , fuzz operationsFuzzer "it gives the correct value" <|
             \l ->
-                fromList l GCounter.zero
+                fromList l GCounter.init
                     |> GCounter.value
                     |> Expect.equal (List.length l)
         ]

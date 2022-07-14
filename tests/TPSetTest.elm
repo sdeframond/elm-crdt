@@ -1,4 +1,4 @@
-module TPSetTest exposing (..)
+module TPSetTest exposing (suite)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple)
@@ -38,16 +38,21 @@ operationsFuzzer =
         |> list
 
 
-tPSetFuzzer : Fuzzer (TPSet.TPSet String)
-tPSetFuzzer =
+fuzzer : Fuzzer (TPSet.TPSet String)
+fuzzer =
     Fuzz.map applyOps operationsFuzzer
 
 
 suite : Test
 suite =
     describe "TPSet"
-        [ itIsAnAnonymousCrdt { fuzzer = tPSetFuzzer, merge = TPSet.merge }
-        , itIsAnonymouslyDiffable { init = TPSet.init, fuzzer = tPSetFuzzer, merge = TPSet.merge, delta = TPSet.delta }
+        [ itIsAnAnonymousCrdt { fuzzer = fuzzer, merge = TPSet.merge }
+        , itIsAnonymouslyDiffable
+            { init = TPSet.init
+            , fuzzer = fuzzer
+            , merge = TPSet.merge
+            , delta = TPSet.delta
+            }
         , test "inserted items are in the set" <|
             \_ ->
                 TPSet.init

@@ -1,4 +1,4 @@
-module PNCounterTest exposing (..)
+module PNCounterTest exposing (suite)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, tuple)
@@ -48,16 +48,21 @@ operationsFuzzer =
         |> list
 
 
-pNCounterFuzzer : Fuzzer PNCounter.PNCounter
-pNCounterFuzzer =
+fuzzer : Fuzzer PNCounter.PNCounter
+fuzzer =
     Fuzz.map (\ops -> applyOps ops PNCounter.init) operationsFuzzer
 
 
 suite : Test
 suite =
     describe "PNCounter"
-        [ itIsAnAnonymousCrdt { fuzzer = pNCounterFuzzer, merge = PNCounter.merge }
-        , itIsAnonymouslyDiffable { init = PNCounter.init, merge = PNCounter.merge, delta = PNCounter.delta, fuzzer = pNCounterFuzzer }
+        [ itIsAnAnonymousCrdt { fuzzer = fuzzer, merge = PNCounter.merge }
+        , itIsAnonymouslyDiffable
+            { init = PNCounter.init
+            , merge = PNCounter.merge
+            , delta = PNCounter.delta
+            , fuzzer = fuzzer
+            }
         , fuzz operationsFuzzer "it counts alright" <|
             \ops ->
                 let

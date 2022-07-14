@@ -17,7 +17,7 @@ type TPSet comparable
 
 init : TPSet comparable
 init =
-    TPSet GSet.empty GSet.empty
+    TPSet GSet.init GSet.init
 
 
 insert : comparable -> TPSet comparable -> TPSet comparable

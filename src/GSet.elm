@@ -1,4 +1,4 @@
-module GSet exposing (GSet, delta, empty, insert, member, merge, toSet)
+module GSet exposing (GSet, delta, init, insert, member, merge, toSet)
 
 import Set
 
@@ -7,8 +7,8 @@ type GSet comparable
     = GSet (Set.Set comparable)
 
 
-empty : GSet comparable
-empty =
+init : GSet comparable
+init =
     GSet Set.empty
 
 

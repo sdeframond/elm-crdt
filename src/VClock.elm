@@ -4,8 +4,8 @@ module VClock exposing
     , compare
     , delta
     , increment
+    , init
     , merge
-    , zero
     )
 
 import Dict
@@ -27,9 +27,9 @@ type alias ReplicaId =
     String
 
 
-zero : VClock
-zero =
-    VClock GCounter.zero
+init : VClock
+init =
+    VClock GCounter.init
 
 
 increment : ReplicaId -> VClock -> VClock
