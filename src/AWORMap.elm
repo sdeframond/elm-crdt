@@ -39,9 +39,9 @@ type Status v
 
 
 type Operation k v valueOp
-    = Insert ReplicaId k v (Maybe v)
-    | Update ReplicaId k valueOp
-    | Remove ReplicaId k (Maybe v)
+    = Insert k v (Maybe v)
+    | Update k valueOp
+    | Remove k (Maybe v)
 
 
 init : AWORMap comparable v
@@ -188,30 +188,32 @@ toDict value (AWORMap d) =
 
 
 apply :
-    (ReplicaId -> valueOp -> v -> v)
+    ReplicaId
+    -> (ReplicaId -> valueOp -> v -> v)
     -> Operation comparable v valueOp
     -> AWORMap comparable v
     -> AWORMap comparable v
-apply applyValueOp op map =
+apply rid applyValueOp op map =
     case op of
-        Insert rid k v _ ->
+        Insert k v _ ->
             insert rid k v map
 
-        Remove rid k _ ->
+        Remove k _ ->
             remove rid k map
 
-        Update rid k valueOp ->
+        Update k valueOp ->
             update applyValueOp rid k valueOp map
 
 
 unapply :
-    (ReplicaId -> valueOp -> v -> v)
+    ReplicaId
+    -> (ReplicaId -> valueOp -> v -> v)
     -> Operation comparable v valueOp
     -> AWORMap comparable v
     -> AWORMap comparable v
-unapply unapplyValueOp op map =
+unapply rid unapplyValueOp op map =
     case op of
-        Insert rid k _ mv ->
+        Insert k _ mv ->
             case mv of
                 Nothing ->
                     remove rid k map
@@ -219,7 +221,7 @@ unapply unapplyValueOp op map =
                 Just replaced ->
                     insert rid k replaced map
 
-        Remove rid k mv ->
+        Remove k mv ->
             case mv of
                 Nothing ->
                     map
@@ -227,20 +229,20 @@ unapply unapplyValueOp op map =
                 Just removed ->
                     insert rid k removed map
 
-        Update rid k valueOp ->
+        Update k valueOp ->
             update unapplyValueOp rid k valueOp map
 
 
-makeInsert : ReplicaId -> comparable -> v -> AWORMap comparable v -> Operation comparable v valueOp
-makeInsert rid k v map =
-    Insert rid k v (get k map)
+makeInsert : comparable -> v -> AWORMap comparable v -> Operation comparable v valueOp
+makeInsert k v map =
+    Insert k v (get k map)
 
 
-makeRemove : ReplicaId -> comparable -> AWORMap comparable v -> Operation comparable v valueOp
-makeRemove rid k map =
-    Remove rid k (get k map)
+makeRemove : comparable -> AWORMap comparable v -> Operation comparable v valueOp
+makeRemove k map =
+    Remove k (get k map)
 
 
-makeUpdate : ReplicaId -> b -> c -> d -> Operation b v c
-makeUpdate rid k op _ =
-    Update rid k op
+makeUpdate : b -> c -> d -> Operation b v c
+makeUpdate k op _ =
+    Update k op

@@ -24,23 +24,39 @@ replica rids =
         |> oneOf
 
 
-operation : List String -> Fuzzer (AWORMap -> Operation)
-operation rids =
+actionMaker : List String -> Fuzzer (AWORMap -> ( String, Operation ))
+actionMaker rids =
+    let
+        makeInsert rid k v map =
+            ( rid, AWORMap.makeInsert k v map )
+
+        makeRemove rid k map =
+            ( rid, AWORMap.makeRemove k map )
+
+        makeUpdate rid k v map =
+            ( rid, AWORMap.makeUpdate k v map )
+    in
     oneOf
-        [ Fuzz.map3 AWORMap.makeInsert (replica rids) string PNCounterTest.fuzzer
-        , Fuzz.map2 AWORMap.makeRemove (replica rids) string
-        , Fuzz.map3 AWORMap.makeUpdate (replica rids) string PNCounterTest.operation
+        [ Fuzz.map3 makeInsert (replica rids) string PNCounterTest.fuzzer
+        , Fuzz.map2 makeRemove (replica rids) string
+        , Fuzz.map3 makeUpdate (replica rids) string PNCounterTest.operation
         ]
 
 
 fuzzer : List String -> Fuzzer AWORMap
 fuzzer rids =
     let
-        applyOps : List (AWORMap -> Operation) -> AWORMap
-        applyOps ops =
-            List.foldl (\makeOp map -> AWORMap.apply PNCounter.apply (makeOp map) map) AWORMap.init ops
+        applyAction makeAction map =
+            let
+                ( rid, op ) =
+                    makeAction map
+            in
+            AWORMap.apply rid PNCounter.apply op map
+
+        applyActions opMakers =
+            List.foldl applyAction AWORMap.init opMakers
     in
-    Fuzz.map applyOps (operation rids |> list)
+    Fuzz.map applyActions (list (actionMaker rids))
 
 
 suite : Test
@@ -60,11 +76,11 @@ suite =
             , fuzzerB = fuzzer [ "B", "C" ]
             }
         , itIsUndoable
-            { apply = AWORMap.apply PNCounter.apply
-            , unapply = AWORMap.unapply PNCounter.unapply
+            { apply = \( rid, op ) -> AWORMap.apply rid PNCounter.apply op
+            , unapply = \( rid, op ) -> AWORMap.unapply rid PNCounter.unapply op
             , value = AWORMap.toDict PNCounter.value
             , fuzzData = fuzzer [ "A", "B", "C" ]
-            , fuzzOpMaker = operation [ "A" ]
+            , fuzzOpMaker = actionMaker [ "A" ]
             }
         , fuzz2 (fuzzer [ "A", "B" ])
             PNCounterTest.fuzzer
