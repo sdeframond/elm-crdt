@@ -1,56 +1,44 @@
-module PNCounterTest exposing (suite)
+module PNCounterTest exposing (fuzzer, operation, suite)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, tuple)
-import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable)
-import PNCounter
+import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable, itIsUndoable)
+import PNCounter exposing (Operation(..))
 import Test exposing (..)
-
-
-type Operation
-    = Inc
-    | Dec
 
 
 applyOps : List ( String, Operation ) -> PNCounter.PNCounter -> PNCounter.PNCounter
 applyOps ops counter =
-    let
-        apply rid op c =
-            case op of
-                Inc ->
-                    PNCounter.increment rid c
-
-                Dec ->
-                    PNCounter.decrement rid c
-    in
     case ops of
         [] ->
             counter
 
         ( rid, op ) :: tail ->
-            apply rid op counter
+            PNCounter.apply rid op counter
                 |> applyOps tail
 
 
-operationsFuzzer : Fuzzer (List ( String, Operation ))
-operationsFuzzer =
+operation : Fuzzer Operation
+operation =
+    [ Inc, Dec ] |> List.map constant |> oneOf
+
+
+actionsFuzzer : Fuzzer (List ( String, Operation ))
+actionsFuzzer =
     let
         replicas =
             [ "A", "B", "C", "D" ]
-
-        operations =
-            [ Inc, Dec ]
     in
     tuple
         ( replicas |> List.map constant |> oneOf
-        , operations |> List.map constant |> oneOf
+        , operation
         )
         |> list
 
 
 fuzzer : Fuzzer PNCounter.PNCounter
 fuzzer =
-    Fuzz.map (\ops -> applyOps ops PNCounter.init) operationsFuzzer
+    Fuzz.map (\ops -> applyOps ops PNCounter.init) actionsFuzzer
 
 
 suite : Test
@@ -63,7 +51,14 @@ suite =
             , delta = PNCounter.delta
             , fuzzer = fuzzer
             }
-        , fuzz operationsFuzzer "it counts alright" <|
+        , itIsUndoable
+            { apply = PNCounter.apply "A"
+            , unapply = PNCounter.unapply "A"
+            , value = PNCounter.value
+            , fuzzData = fuzzer
+            , fuzzOpMaker = operation |> Fuzz.map (\o -> always o)
+            }
+        , fuzz actionsFuzzer "it counts alright" <|
             \ops ->
                 let
                     count =

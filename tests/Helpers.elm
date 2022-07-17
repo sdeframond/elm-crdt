@@ -3,6 +3,7 @@ module Helpers exposing
     , itIsAnAnonymousCrdt
     , itIsAnonymouslyDiffable
     , itIsDiffable
+    , itIsUndoable
     )
 
 import Expect
@@ -76,4 +77,27 @@ itIsDiffable { init, fuzzerA, fuzzerB, delta, merge } =
         , fuzz2 fuzzerA fuzzerB "d(a, a + b) == init" <|
             \a b ->
                 Expect.equal (delta a (merge a b)) init
+        ]
+
+
+itIsUndoable :
+    { apply : op -> a -> a
+    , unapply : op -> a -> a
+    , value : a -> b
+    , fuzzData : Fuzz.Fuzzer a
+    , fuzzOpMaker : Fuzz.Fuzzer (a -> op)
+    }
+    -> Test
+itIsUndoable { apply, unapply, value, fuzzData, fuzzOpMaker } =
+    describe "it is undoable"
+        [ fuzz2 fuzzData fuzzOpMaker "unapplying an operation restores the inital value" <|
+            \data makeOp ->
+                let
+                    op =
+                        makeOp data
+                in
+                apply op data
+                    |> unapply op
+                    |> value
+                    |> Expect.equal (value data)
         ]

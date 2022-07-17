@@ -1,12 +1,20 @@
 module AWORMap exposing
     ( AWORMap
+    , Operation
+    , apply
     , delta
     , get
     , init
     , insert
+    , makeInsert
+    , makeRemove
+    , makeUpdate
     , member
     , merge
     , remove
+    , toDict
+    , unapply
+    , update
     )
 
 import Dict
@@ -28,6 +36,12 @@ type alias ReplicaId =
 type Status v
     = Added v
     | Removed
+
+
+type Operation k v valueOp
+    = Insert ReplicaId k v (Maybe v)
+    | Update ReplicaId k valueOp
+    | Remove ReplicaId k (Maybe v)
 
 
 init : AWORMap comparable v
@@ -149,3 +163,84 @@ get k (AWORMap d) =
                     Removed ->
                         Nothing
             )
+
+
+update : (ReplicaId -> op -> v -> v) -> ReplicaId -> comparable -> op -> AWORMap comparable v -> AWORMap comparable v
+update applyValueOp rid k op map =
+    get k map
+        |> Maybe.map (applyValueOp rid op)
+        |> Maybe.map (\v -> insert rid k v map)
+        |> Maybe.withDefault map
+
+
+toDict : (v -> a) -> AWORMap comparable v -> Dict.Dict comparable a
+toDict value (AWORMap d) =
+    let
+        filterDot k dot res =
+            case dot of
+                ( _, Removed ) ->
+                    res
+
+                ( _, Added v ) ->
+                    Dict.insert k (value v) res
+    in
+    Dict.foldl filterDot Dict.empty d
+
+
+apply :
+    (ReplicaId -> valueOp -> v -> v)
+    -> Operation comparable v valueOp
+    -> AWORMap comparable v
+    -> AWORMap comparable v
+apply applyValueOp op map =
+    case op of
+        Insert rid k v _ ->
+            insert rid k v map
+
+        Remove rid k _ ->
+            remove rid k map
+
+        Update rid k valueOp ->
+            update applyValueOp rid k valueOp map
+
+
+unapply :
+    (ReplicaId -> valueOp -> v -> v)
+    -> Operation comparable v valueOp
+    -> AWORMap comparable v
+    -> AWORMap comparable v
+unapply unapplyValueOp op map =
+    case op of
+        Insert rid k _ mv ->
+            case mv of
+                Nothing ->
+                    remove rid k map
+
+                Just replaced ->
+                    insert rid k replaced map
+
+        Remove rid k mv ->
+            case mv of
+                Nothing ->
+                    map
+
+                Just removed ->
+                    insert rid k removed map
+
+        Update rid k valueOp ->
+            update unapplyValueOp rid k valueOp map
+
+
+makeInsert : ReplicaId -> comparable -> v -> AWORMap comparable v -> Operation comparable v valueOp
+makeInsert rid k v map =
+    Insert rid k v (get k map)
+
+
+makeRemove : ReplicaId -> comparable -> AWORMap comparable v -> Operation comparable v valueOp
+makeRemove rid k map =
+    Remove rid k (get k map)
+
+
+makeUpdate : ReplicaId -> b -> c -> d -> Operation b v c
+makeUpdate rid k op _ =
+    Update rid k op

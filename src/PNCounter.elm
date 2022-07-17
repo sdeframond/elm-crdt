@@ -1,10 +1,13 @@
 module PNCounter exposing
-    ( PNCounter
+    ( Operation(..)
+    , PNCounter
+    , apply
     , decrement
     , delta
     , increment
     , init
     , merge
+    , unapply
     , value
     )
 
@@ -17,6 +20,11 @@ type alias ReplicaId =
 
 type PNCounter
     = PNCounter GCounter GCounter
+
+
+type Operation
+    = Inc
+    | Dec
 
 
 init : PNCounter
@@ -53,3 +61,23 @@ merge (PNCounter incsA decsA) (PNCounter incsB decsB) =
 delta : PNCounter -> PNCounter -> PNCounter
 delta (PNCounter incsA decsA) (PNCounter incsB decsB) =
     PNCounter (GCounter.delta incsA incsB) (GCounter.delta decsA decsB)
+
+
+apply : ReplicaId -> Operation -> PNCounter -> PNCounter
+apply rid op c =
+    case op of
+        Inc ->
+            increment rid c
+
+        Dec ->
+            decrement rid c
+
+
+unapply : ReplicaId -> Operation -> PNCounter -> PNCounter
+unapply rid op c =
+    case op of
+        Inc ->
+            decrement rid c
+
+        Dec ->
+            increment rid c

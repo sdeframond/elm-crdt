@@ -1,31 +1,21 @@
 module AWORMapTest exposing (suite)
 
 import AWORMap
+import Dict
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string)
-import GCounter
-import GCounterTest
-import Helpers exposing (itIsACrdt, itIsDiffable)
+import Helpers exposing (itIsACrdt, itIsDiffable, itIsUndoable)
+import PNCounter
+import PNCounterTest
 import Test exposing (..)
 
 
-type Operation
-    = Insert String String GCounter.GCounter
-    | Remove String String
+type alias Operation =
+    AWORMap.Operation String PNCounter.PNCounter PNCounter.Operation
 
 
-applyOps : List Operation -> AWORMap.AWORMap String GCounter.GCounter
-applyOps ops =
-    let
-        apply op map =
-            case op of
-                Insert rid k v ->
-                    AWORMap.insert rid k v map
-
-                Remove rid k ->
-                    AWORMap.remove rid k map
-    in
-    List.foldl apply AWORMap.init ops
+type alias AWORMap =
+    AWORMap.AWORMap String PNCounter.PNCounter
 
 
 replica : List String -> Fuzzer String
@@ -34,21 +24,23 @@ replica rids =
         |> oneOf
 
 
-operationsFuzzer : List String -> Fuzzer (List Operation)
-operationsFuzzer rids =
-    let
-        operation =
-            [ Fuzz.map3 Insert (replica rids) string GCounterTest.fuzzer
-            , Fuzz.map2 Remove (replica rids) string
-            ]
-                |> oneOf
-    in
-    list operation
+operation : List String -> Fuzzer (AWORMap -> Operation)
+operation rids =
+    oneOf
+        [ Fuzz.map3 AWORMap.makeInsert (replica rids) string PNCounterTest.fuzzer
+        , Fuzz.map2 AWORMap.makeRemove (replica rids) string
+        , Fuzz.map3 AWORMap.makeUpdate (replica rids) string PNCounterTest.operation
+        ]
 
 
-fuzzer : List String -> Fuzzer (AWORMap.AWORMap String GCounter.GCounter)
+fuzzer : List String -> Fuzzer AWORMap
 fuzzer rids =
-    Fuzz.map applyOps (operationsFuzzer rids)
+    let
+        applyOps : List (AWORMap -> Operation) -> AWORMap
+        applyOps ops =
+            List.foldl (\makeOp map -> AWORMap.apply PNCounter.apply (makeOp map) map) AWORMap.init ops
+    in
+    Fuzz.map applyOps (operation rids |> list)
 
 
 suite : Test
@@ -58,21 +50,28 @@ suite =
             { fuzzerA = fuzzer [ "A" ]
             , fuzzerB = fuzzer [ "B" ]
             , fuzzerC = fuzzer [ "C" ]
-            , merge = AWORMap.merge GCounter.merge
+            , merge = AWORMap.merge PNCounter.merge
             }
         , itIsDiffable
             { init = AWORMap.init
-            , merge = AWORMap.merge GCounter.merge
-            , delta = AWORMap.delta GCounter.delta
+            , merge = AWORMap.merge PNCounter.merge
+            , delta = AWORMap.delta PNCounter.delta
             , fuzzerA = fuzzer [ "A" ]
             , fuzzerB = fuzzer [ "B", "C" ]
             }
+        , itIsUndoable
+            { apply = AWORMap.apply PNCounter.apply
+            , unapply = AWORMap.unapply PNCounter.unapply
+            , value = AWORMap.toDict PNCounter.value
+            , fuzzData = fuzzer [ "A", "B", "C" ]
+            , fuzzOpMaker = operation [ "A" ]
+            }
         , fuzz2 (fuzzer [ "A", "B" ])
-            GCounterTest.fuzzer
+            PNCounterTest.fuzzer
             "Add wins over a concurrent remove"
           <|
             \map value ->
-                AWORMap.merge GCounter.merge
+                AWORMap.merge PNCounter.merge
                     (AWORMap.remove "A" "" map)
                     (AWORMap.remove "B" "" map |> AWORMap.insert "B" "" value)
                     |> AWORMap.member ""
@@ -83,7 +82,7 @@ suite =
                     |> AWORMap.insert "A" "foo" "bar"
                     |> AWORMap.get "foo"
                     |> Expect.equal (Just "bar")
-        , fuzz2 (fuzzer [ "A", "B" ]) GCounterTest.fuzzer ".insert is idempotent" <|
+        , fuzz2 (fuzzer [ "A", "B" ]) PNCounterTest.fuzzer ".insert is idempotent" <|
             \map value ->
                 let
                     a =
@@ -119,22 +118,34 @@ suite =
             \_ ->
                 let
                     map =
-                        AWORMap.init |> AWORMap.insert "A" "foo" GCounter.init
+                        AWORMap.init |> AWORMap.insert "A" "foo" PNCounter.init
 
                     a =
-                        AWORMap.insert "A" "foo" (GCounter.init |> GCounter.increment "A") map
+                        AWORMap.insert "A" "foo" (PNCounter.init |> PNCounter.increment "A") map
 
                     b =
-                        AWORMap.insert "B" "foo" (GCounter.init |> GCounter.increment "B") map
+                        AWORMap.insert "B" "foo" (PNCounter.init |> PNCounter.increment "B") map
 
                     merged =
-                        AWORMap.merge GCounter.merge a b
+                        AWORMap.merge PNCounter.merge a b
 
                     expectedValue =
-                        GCounter.init
-                            |> GCounter.increment "B"
-                            |> GCounter.increment "A"
+                        PNCounter.init
+                            |> PNCounter.increment "B"
+                            |> PNCounter.increment "A"
                 in
                 AWORMap.get "foo" merged
                     |> Expect.equal (Just expectedValue)
+        , fuzz2 (fuzzer [ "A", "B" ]) PNCounterTest.operation ".update applies an operation to the value" <|
+            \map valueOp ->
+                AWORMap.update PNCounter.apply "A" "" valueOp map
+                    |> AWORMap.get ""
+                    |> Expect.equal (AWORMap.get "" map |> Maybe.map (PNCounter.apply "A" valueOp))
+        , test ".toDict returns the data as a dict" <|
+            \_ ->
+                AWORMap.init
+                    |> AWORMap.insert "A" "foo" "foo"
+                    |> AWORMap.insert "A" "bar" "bar"
+                    |> AWORMap.toDict identity
+                    |> Expect.equal (Dict.fromList [ ( "foo", "foo" ), ( "bar", "bar" ) ])
         ]
