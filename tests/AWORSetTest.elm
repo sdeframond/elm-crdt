@@ -3,7 +3,7 @@ module AWORSetTest exposing (suite)
 import AWORSet
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string, tuple3)
-import Helpers exposing (itIsACrdt, itIsDiffable)
+import Helpers exposing (itIsACrdt, itIsADelta)
 import Test exposing (..)
 
 
@@ -57,7 +57,7 @@ suite =
             , fuzzerC = fuzzer [ "C" ]
             , merge = AWORSet.merge
             }
-        , itIsDiffable
+        , itIsADelta
             { init = AWORSet.init
             , merge = AWORSet.merge
             , delta = AWORSet.delta

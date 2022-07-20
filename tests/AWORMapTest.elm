@@ -4,7 +4,7 @@ import AWORMap
 import Dict
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, string)
-import Helpers exposing (itIsACrdt, itIsDiffable, itIsUndoable)
+import Helpers exposing (itIsACrdt, itIsADelta, itIsUndoable)
 import PNCounter
 import PNCounterTest
 import Test exposing (..)
@@ -68,7 +68,7 @@ suite =
             , fuzzerC = fuzzer [ "C" ]
             , merge = AWORMap.merge PNCounter.merge
             }
-        , itIsDiffable
+        , itIsADelta
             { init = AWORMap.init
             , merge = AWORMap.merge PNCounter.merge
             , delta = AWORMap.delta PNCounter.delta

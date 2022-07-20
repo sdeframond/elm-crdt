@@ -42,7 +42,7 @@ undoList =
 
 suite : Test
 suite =
-    describe "UndoList"
+    describe "OpUndoList"
         [ test ".value returns the value" <|
             \_ ->
                 UndoList.init 1 |> UndoList.value |> Expect.equal 1

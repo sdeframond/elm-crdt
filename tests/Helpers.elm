@@ -1,8 +1,8 @@
 module Helpers exposing
     ( itIsACrdt
+    , itIsADelta
     , itIsAnAnonymousCrdt
     , itIsAnonymouslyDiffable
-    , itIsDiffable
     , itIsUndoable
     )
 
@@ -49,7 +49,7 @@ itIsAnonymouslyDiffable :
     }
     -> Test
 itIsAnonymouslyDiffable { init, fuzzer, delta, merge } =
-    itIsDiffable
+    itIsADelta
         { init = init
         , fuzzerA = fuzzer
         , fuzzerB = fuzzer
@@ -58,7 +58,7 @@ itIsAnonymouslyDiffable { init, fuzzer, delta, merge } =
         }
 
 
-itIsDiffable :
+itIsADelta :
     { init : a
     , delta : a -> a -> a
     , merge : a -> a -> a
@@ -66,8 +66,8 @@ itIsDiffable :
     , fuzzerB : Fuzz.Fuzzer a
     }
     -> Test
-itIsDiffable { init, fuzzerA, fuzzerB, delta, merge } =
-    describe "it is diffable"
+itIsADelta { init, fuzzerA, fuzzerB, delta, merge } =
+    describe "it is a delta"
         [ fuzz2 fuzzerA fuzzerB "a + d(b, a) == a + b" <|
             \a b ->
                 Expect.equal (merge a (delta b a)) (merge a b)
