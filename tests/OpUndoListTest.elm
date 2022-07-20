@@ -1,9 +1,9 @@
-module UndoListTest exposing (suite)
+module OpUndoListTest exposing (suite)
 
 import Expect
 import Fuzz exposing (Fuzzer)
+import OpUndoList as UndoList
 import Test exposing (..)
-import UndoList
 
 
 type alias Op =

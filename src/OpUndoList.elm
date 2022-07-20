@@ -1,4 +1,4 @@
-module UndoList exposing
+module OpUndoList exposing
     ( UndoList
     , do
     , init
