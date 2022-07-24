@@ -2,10 +2,12 @@ module AWORMap exposing
     ( AWORMap
     , Operation
     , apply
+    , applyDiff
     , delta
     , get
     , init
     , insert
+    , makeDiff
     , makeInsert
     , makeRemove
     , makeUpdate
@@ -246,3 +248,67 @@ makeRemove k map =
 makeUpdate : b -> c -> d -> Operation b v c
 makeUpdate k op _ =
     Update k op
+
+
+type DiffStatus v diff
+    = DiffInserted v
+    | DiffRemoved
+    | DiffChanged diff
+
+
+makeDiff :
+    (crdt -> v)
+    -> (v -> v -> valueDiff)
+    -> AWORMap comparable crdt
+    -> AWORMap comparable crdt
+    -> Dict.Dict comparable (DiffStatus crdt valueDiff)
+makeDiff getValue diffValue a b =
+    let
+        both k crdtA crdtB d =
+            Dict.insert k
+                (diffValue (getValue crdtA) (getValue crdtB) |> DiffChanged)
+                d
+    in
+    Dict.merge
+        (\k crdt d -> Dict.insert k (DiffInserted crdt) d)
+        both
+        (\k _ d -> Dict.insert k DiffRemoved d)
+        (toDict identity a)
+        (toDict identity b)
+        Dict.empty
+
+
+applyDiff :
+    ReplicaId
+    -> (ReplicaId -> valueDiff -> crdt -> crdt)
+    -> Dict.Dict comparable (DiffStatus crdt valueDiff)
+    -> AWORMap comparable crdt
+    -> AWORMap comparable crdt
+applyDiff rid applyValueDiff diff map =
+    let
+        left k itemDiff m =
+            case itemDiff of
+                DiffInserted crdt ->
+                    insert rid k crdt m
+
+                _ ->
+                    m
+
+        both k itemDiff _ m =
+            case itemDiff of
+                DiffInserted new ->
+                    insert rid k new m
+
+                DiffRemoved ->
+                    remove rid k m
+
+                DiffChanged valueDiff ->
+                    update applyValueDiff rid k valueDiff m
+    in
+    Dict.merge
+        left
+        both
+        (\_ _ d -> d)
+        diff
+        (toDict identity map)
+        map

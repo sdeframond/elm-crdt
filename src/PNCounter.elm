@@ -1,11 +1,13 @@
 module PNCounter exposing
     ( Operation(..)
     , PNCounter
+    , addInt
     , apply
     , decrement
     , delta
     , increment
     , init
+    , makeDiff
     , merge
     , unapply
     , value
@@ -81,3 +83,20 @@ unapply rid op c =
 
         Dec ->
             increment rid c
+
+
+addInt : ReplicaId -> Int -> PNCounter -> PNCounter
+addInt rid i c =
+    if i == 0 then
+        c
+
+    else if i > 0 then
+        addInt rid (i - 1) (increment rid c)
+
+    else
+        addInt rid (i + 1) (decrement rid c)
+
+
+makeDiff : PNCounter -> PNCounter -> Int
+makeDiff a b =
+    value a - value b

@@ -4,6 +4,7 @@ module Helpers exposing
     , itIsAnAnonymousCrdt
     , itIsAnonymouslyDiffable
     , itIsUndoable
+    , itIsValueDiffable
     )
 
 import Expect
@@ -77,6 +78,22 @@ itIsADelta { init, fuzzerA, fuzzerB, delta, merge } =
         , fuzz2 fuzzerA fuzzerB "d(a, a + b) == init" <|
             \a b ->
                 Expect.equal (delta a (merge a b)) init
+        ]
+
+
+itIsValueDiffable :
+    { fuzzer : Fuzz.Fuzzer a
+    , makeDiff : a -> a -> diff
+    , apply : diff -> a -> a
+    , value : a -> v
+    }
+    -> Test
+itIsValueDiffable { fuzzer, makeDiff, apply, value } =
+    describe "it is diffable"
+        [ fuzz2 fuzzer fuzzer "v(apply(d(a, b), b)) == v(a)" <|
+            \a b ->
+                value (apply (makeDiff a b) b)
+                    |> Expect.equal (value a)
         ]
 
 

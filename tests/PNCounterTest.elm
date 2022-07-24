@@ -2,7 +2,7 @@ module PNCounterTest exposing (fuzzer, operation, suite)
 
 import Expect
 import Fuzz exposing (Fuzzer, constant, list, oneOf, tuple)
-import Helpers exposing (itIsAnAnonymousCrdt, itIsAnonymouslyDiffable, itIsUndoable)
+import Helpers
 import PNCounter exposing (Operation(..))
 import Test exposing (..)
 
@@ -44,19 +44,25 @@ fuzzer =
 suite : Test
 suite =
     describe "PNCounter"
-        [ itIsAnAnonymousCrdt { fuzzer = fuzzer, merge = PNCounter.merge }
-        , itIsAnonymouslyDiffable
+        [ Helpers.itIsAnAnonymousCrdt { fuzzer = fuzzer, merge = PNCounter.merge }
+        , Helpers.itIsAnonymouslyDiffable
             { init = PNCounter.init
             , merge = PNCounter.merge
             , delta = PNCounter.delta
             , fuzzer = fuzzer
             }
-        , itIsUndoable
+        , Helpers.itIsUndoable
             { apply = PNCounter.apply "A"
             , unapply = PNCounter.unapply "A"
             , value = PNCounter.value
             , fuzzData = fuzzer
             , fuzzOpMaker = operation |> Fuzz.map (\o -> always o)
+            }
+        , Helpers.itIsValueDiffable
+            { fuzzer = fuzzer
+            , makeDiff = PNCounter.makeDiff
+            , apply = PNCounter.addInt "A"
+            , value = PNCounter.value
             }
         , fuzz actionsFuzzer "it counts alright" <|
             \ops ->

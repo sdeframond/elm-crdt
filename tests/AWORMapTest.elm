@@ -82,6 +82,12 @@ suite =
             , fuzzData = fuzzer [ "A", "B", "C" ]
             , fuzzOpMaker = actionMaker [ "A" ]
             }
+        , Helpers.itIsValueDiffable
+            { fuzzer = fuzzer [ "A", "B" ]
+            , makeDiff = AWORMap.makeDiff PNCounter.value (-)
+            , apply = AWORMap.applyDiff "A" PNCounter.addInt
+            , value = AWORMap.toDict PNCounter.value
+            }
         , fuzz2 (fuzzer [ "A", "B" ])
             PNCounterTest.fuzzer
             "Add wins over a concurrent remove"
