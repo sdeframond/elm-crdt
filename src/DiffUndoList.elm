@@ -25,7 +25,12 @@ undo makeDiff apply (UL data) =
                 previous =
                     apply toPrevious data.value
             in
-            UL { data | value = previous, undo = before, redo = makeDiff previous data.value :: data.redo }
+            UL
+                { data
+                    | value = previous
+                    , undo = before
+                    , redo = makeDiff previous data.value :: data.redo
+                }
 
 
 redo : (a -> a -> diff) -> (diff -> a -> a) -> UndoList a diff -> UndoList a diff
@@ -39,7 +44,12 @@ redo makeDiff apply (UL data) =
                 next =
                     apply toNext data.value
             in
-            UL { data | value = next, redo = after, undo = makeDiff next data.value :: data.undo }
+            UL
+                { data
+                    | value = next
+                    , redo = after
+                    , undo = makeDiff next data.value :: data.undo
+                }
 
 
 update : (a -> a) -> UndoList a diff -> UndoList a diff
@@ -54,4 +64,8 @@ value (UL data) =
 
 recordUpdate : (a -> a -> diff) -> (a -> a) -> UndoList a diff -> UndoList a diff
 recordUpdate makeDiff f (UL data) =
-    UL { data | value = f data.value, undo = makeDiff data.value data.value :: data.undo }
+    UL
+        { data
+            | value = f data.value
+            , undo = makeDiff data.value data.value :: data.undo
+        }
