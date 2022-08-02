@@ -1,6 +1,8 @@
 module AWORMap exposing
     ( AWORMap
+    , DiffStatus
     , Operation
+    , ReplicaId
     , apply
     , applyDiff
     , delta
