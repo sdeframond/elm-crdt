@@ -1,47 +1,40 @@
 module LWWReg exposing (LWWReg, init, makeDiff, merge, update, value)
 
 
-type alias ReplicaId =
-    String
+type LWWReg comparable a
+    = LWWReg comparable a
 
 
-type alias Clock =
-    ( Int, ReplicaId )
+init : comparable -> a -> LWWReg comparable a
+init ts v =
+    LWWReg ts v
 
 
-type LWWReg a
-    = LWWReg Clock a
-
-
-init : Clock -> a -> LWWReg a
-init cl v =
-    LWWReg cl v
-
-
-merge : LWWReg a -> LWWReg a -> LWWReg a
-merge (LWWReg clA va) (LWWReg clB vb) =
-    case compare clA clB of
+merge : LWWReg comparable a -> LWWReg comparable a -> LWWReg comparable a
+merge (LWWReg tsA va) (LWWReg tsB vb) =
+    case compare tsA tsB of
         GT ->
-            LWWReg clA va
+            LWWReg tsA va
 
         LT ->
-            LWWReg clB vb
+            LWWReg tsB vb
 
         EQ ->
-            -- both A and B would do
-            LWWReg clA va
+            -- Timestamps equality must imply values equality in order for
+            -- LWWReg to be a CRDT.
+            LWWReg tsA va
 
 
-value : LWWReg a -> a
+value : LWWReg comparable a -> a
 value (LWWReg _ v) =
     v
 
 
-makeDiff : (a -> a -> diff) -> LWWReg a -> LWWReg a -> diff
+makeDiff : (a -> a -> diff) -> LWWReg comparable a -> LWWReg comparable a -> diff
 makeDiff diff (LWWReg _ a) (LWWReg _ b) =
     diff a b
 
 
-update : Clock -> (a -> b) -> LWWReg a -> LWWReg b
-update newCl f (LWWReg cl v) =
-    LWWReg (max newCl cl) (f v)
+update : (comparable -> comparable) -> comparable -> (a -> b) -> LWWReg comparable a -> LWWReg comparable b
+update nextTick ts f (LWWReg oldTs v) =
+    LWWReg (max ts (nextTick oldTs)) (f v)
